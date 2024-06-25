@@ -45,7 +45,6 @@ death_counter = 0
 skin_num = 0
 
 
-
 Achiever = False
 
 # Load Images
