@@ -1,4 +1,5 @@
 import pygame, math, os, random, sys, time
+import numpy as np
 from operator import sub
 from pygame.locals import *
 
@@ -34,14 +35,17 @@ gravity_strength = 1.8
 bullets = []
 enemy_bullets = []
 tile_rects = []
+x_tile_positions = []
 particles = []
 enemies = []
+skin_num = 0
+survey_screen = False
 
 show_badges = False
 name_entered = False
 death_counter = 0
 shots_fired = 0
-Achiever = True
+Achiever = False
 
 # Load Images
 cursor = pygame.transform.scale(pygame.image.load('data/images/cursor.png'), (32, 32)).convert()
@@ -114,6 +118,21 @@ def load_animations(actions, folder_name):  # (['Running', 'Idle'], 'player_imag
     return animation_database
 
 
+def select_skin(skin_num):
+    skin_mapping = {
+        0: 'player_images',
+        1: 'player_images_chad',
+        2: 'player_image_nezuko',
+        3: 'player_image_carrot'
+    }
+
+    folder_name = skin_mapping.get(skin_num, 'player_images')
+
+    return load_animations(['Running', 'Idle', 'Walking'], folder_name)
+
+
+player_animations1 = select_skin(skin_num)
+
 player_animations = load_animations(['Running', 'Idle', 'Walking'], 'player_images')
 enemy_animations = load_animations(['Idle', 'Walking'], 'enemy_images')
 # Laden der Boss Animations
@@ -169,11 +188,16 @@ class Level():
     def create_map_hitbox(self):
         global tile_rects
         tile_rects = []
+        global x_tile_positions
+        x_tile_positions = []
         y = 0
         for layer in self.map:
             x = 0
             for tile in layer:
-                if tile != '0':
+                if tile == 'x':
+                    x_tile_positions.append(pygame.Rect(int(x), int(y), self.tile_size[0], self.tile_size[1]))
+                    # x-tile map position
+                elif tile != '0':
                     tile_rects.append(pygame.Rect(int(x), int(y), self.tile_size[0], self.tile_size[1]))
                 x += self.tile_size[0]
             y += self.tile_size[1]
@@ -674,6 +698,7 @@ levels = {'Tutorial': Level('map0', (600, 490), [(2980, 250)], 1400),
           'Level 1': Level('map1', (830, -100), [(140, -145), (5375, 280), (5215, 345), (7415, 345)], 800),
           'Level 2': Level('map2', (600, 800), [(255, 445), (1695, -130), (3925, 380), (3915, 0)], 1900),
           'Level 3': Level('map3', (50, 400), [(1790, 400), (3000, 100)], 1000),
+          'Level 3_5': Level('map3_5', (295, 100), [(1105, 480), (1855, 600)], 1500),
           'Level 4': Level('map4', (295, 100), [(1105, 480), (1855, 600), (3935, 675), (4385, 925), (5045, 850)], 1500),
           'Level 5': Level('map5', (165, -200), [(4865, 350), (5720, 550), (8205, 350), (10690, 550)], 1500),
           'Level 5_5': Level('map5_5', (165, -200), [(4865, 350), (5720, 550), (8205, 350), (11090, 550)], 2500)}
@@ -719,6 +744,46 @@ def initialize_enemies():
 
 
 gun = Gun(gun_img)
+
+
+def clear_survey_answers():
+    with open('answer.txt', 'w') as f:
+        pass
+
+
+def death_counter_increment():
+    global death_counter
+    death_counter += 1
+
+
+def death_counter_decrement():
+    global death_counter
+    death_counter -= 1
+
+
+def death_counter_reset():
+    global death_counter
+    death_counter = 0
+
+
+def check_level_change_to(current_level, next_level):
+    global player, game_running, main_menu
+
+    if current_level == 'Level 3':
+        # map_3_x_tiles is a list of coordinates of 'x'-tiles-position
+        for tile_pos in x_tile_positions:
+            tile_rect = pygame.Rect(tile_pos[0], tile_pos[1], 64, 64)  # >>>> tile_size = (64,64)
+            if tile_rect.colliderect(player.rect):
+                player.change_level(next_level)  # map change to 3_5
+                game_running = True
+                main_menu = False
+                play_bgmusic()
+    elif current_level == 'Level 1':
+        if death_counter > 3:
+            player.change_level(next_level)  # map change to 1_5
+            game_running = True
+            main_menu = False
+            play_bgmusic()
 
 
 # Functions
@@ -798,6 +863,7 @@ def draw_main_menu():
     load_game_button.draw()
     exit_button.draw()
     badges_button.draw()
+    survey_button.draw()
     display.blit(title_img, (250, 0))
 
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
@@ -1088,6 +1154,126 @@ def update_badge_status(badge_name):
         f.writelines(badges)
 
 
+questions = [
+    ": It is important to me to follow my own path",  # f1 freespirit
+    "Being independent is important to me",  # f3
+    "Rewards are a great way to motivate me",  # r2 player
+    " If the reward is sufficient, I will put in the effort",  # r4
+    " I like mastering difficult tasks",  # a2 achiever
+    " I enjoy emerging victorious out of difficult circumstances",  # a4
+    # " I like being part of a team", #s2 socializer
+    # "I enjoy group activities", #s4
+    # "Question 9?",
+    # "Question 10?",
+    # "Question 11?",
+    # "Question 12?"
+]
+
+answer_choices = [
+    "Strongly Agree",
+    "Agree",
+    "Somewhat Agree",
+    "Neutral",
+    "Somewhat Disagree",
+    "Disagree",
+    "Strongly Disagree"
+]
+
+current_question = 0
+survey_answers = []
+answer_buttons = []
+
+
+def draw_survey_screen():
+    global answer_buttons
+    display.fill((180, 235, 235))
+    answer_buttons = []
+
+    if not answer_buttons:
+        for i, choice in enumerate(answer_choices):
+            button_y = 200 + (i * 100)  # Adjust the starting y-position as necessary
+            answer_buttons.append(Button(560, button_y, 800, 80, (75, 189, 73), choice, (0, 0, 0), pixel_font_large))
+
+    # Draw and update buttons
+    for button in answer_buttons:
+        button.update()
+        button.draw()
+
+    question_text = pixel_font.render(questions[current_question], True, (0, 0, 0))
+    display.blit(question_text, (250, 0))
+
+    screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
+
+    update_cursor(pygame.mouse.get_pos())
+
+    pygame.display.update()
+
+
+response_mapping = {
+    "Strongly Disagree": 1,
+    "Disagree": 2,
+    "Somewhat Disagree": 3,
+    "Neutral": 4,
+    "Somewhat Agree": 5,
+    "Agree": 6,
+    "Strongly Agree": 7
+}
+
+
+def survey_mapping(response_mapping):
+    # Read the responses from the text file
+    with open('answer.txt', 'r') as file:
+        lines = file.readlines()
+
+    # Parse the responses and convert to numerical values
+    responses = []
+    for line in lines:
+        try:
+            # Split the line and strip whitespace
+            question, response = line.split(': ')
+            # Append the mapped numerical value
+            responses.append(response_mapping[response.strip()])
+        except (ValueError, KeyError) as e:
+            # Handle lines that don't match the expected format or unknown responses
+            print(f"Skipping line due to error: {line.strip()} - {e}")
+
+    # Convert to numpy array and reshape (1 respondent x 6 questions)
+    responses_array = np.array(responses).reshape(1, -1)
+
+    # Standardized loadings (β) with comments indicating the question and player type
+    full_loadings = np.zeros((6, 4))
+
+    # Free Spirit
+    full_loadings[0, 3] = 0.79  # Q1
+    full_loadings[1, 3] = 0.67  # Q2
+
+    # Player
+    full_loadings[2, 2] = 0.76  # Q3
+    full_loadings[3, 2] = 0.71  # Q4
+
+    # Achiever
+    full_loadings[4, 1] = 0.68  # Q5
+    full_loadings[5, 1] = 0.75  # Q6
+
+    # Compute factor scores
+    factor_scores = np.dot(responses_array, full_loadings)
+
+    # Determine player types
+    player_types = np.argmax(factor_scores, axis=1)
+
+    # Map indices to player type names
+    player_type_names = ['Socializer', 'Achiever', 'Player', 'Free Spirit']  # socializer not in use
+    classified_player_types = [player_type_names[i] for i in player_types]
+
+    # Output the player types for each respondent
+    print("Responses:", responses)
+    print("Factor Scores:\n", factor_scores)
+    print("Classified Player Type:\n", classified_player_types[0])
+
+    clear_survey_answers()
+    print("cleared")
+
+
 # TODO
 # Main Loop
 end_level_time = 0
@@ -1104,6 +1290,7 @@ while True:
         exit_button = Button(1500, 900, 300, 80, (255, 50, 50), "Exit to desktop", (0, 0, 0), pixel_font_large)
         load_game_button = Button(560, 800, 800, 150, (75, 160, 173), "Load Game ({}/9)".format(len(get_saves())),
                                   (0, 0, 0), pixel_font_large)
+        survey_button = Button(120, 800, 400, 100, (75, 160, 173), "Take Survey", (0, 0, 0), pixel_font_large)
         badges_button = Button(120, 300, 300, 100, (255, 50, 255), "Badges", (0, 0, 0), pixel_font_large)
 
         for event in pygame.event.get():
@@ -1140,6 +1327,10 @@ while True:
                         show_badges = True
                         main_menu = False
                         select_sound.play()
+                    if survey_button.is_over():
+                        survey_screen = True
+                        main_menu = False
+                        select_sound.play()
                     if load_game_button.is_over():
                         load_game_menu = True
                         main_menu = False
@@ -1149,6 +1340,7 @@ while True:
         load_game_button.update()
         exit_button.update()
         badges_button.update()
+        survey_button.update()
         draw_main_menu()
 
     if show_badges:
@@ -1175,6 +1367,39 @@ while True:
 
         back_button.update()
         draw_display_badges()
+
+    if survey_screen:
+        draw_survey_screen()
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == KEYDOWN:
+                if event.key == pygame.K_f:
+                    screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
+                if event.key == pygame.K_ESCAPE:
+                    screen = pygame.display.set_mode(WINDOW_SIZE)
+
+            if event.type == MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    for i, button in enumerate(answer_buttons):
+                        if button.is_over():
+                            survey_answers.append((current_question, answer_choices[i]))
+                            # write in answer-file
+                            with open('answer.txt', 'a') as f:
+                                f.write(f"Q{current_question + 1}: {answer_choices[i]}\n")
+                            current_question += 1
+
+                            if current_question >= len(questions):
+                                survey_mapping(response_mapping)
+                                survey_screen = False
+                                main_menu = True
+                                current_question = 0
+                            else:
+                                draw_survey_screen()
+                            select_sound.play()
 
     if load_game_menu:
         save_buttons = []
