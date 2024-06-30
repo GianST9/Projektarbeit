@@ -38,11 +38,17 @@ bullets = []
 enemy_bullets = []
 tile_rects = []
 x_tile_positions = []
+y_tile_positions = []
 particles = []
 enemies = []
 skin_num = 0
 player_type = " "
 
+text_start_time = 0
+text_duration = 3000
+show_text = False
+carrot_locked = True
+show_skin = True
 show_badges = False
 name_entered = False
 death_counter = 0
@@ -52,6 +58,7 @@ shots_fired = 0
 cursor = pygame.transform.scale(pygame.image.load('data/images/cursor.png'), (32, 32)).convert()
 cursor.set_colorkey((255, 255, 255))
 
+carrot_img = pygame.transform.scale(pygame.image.load('data/player_image_carrot/Idle/Idle1.png'),(128, 128))
 instruction_img = pygame.image.load('data/images/instructions.png').convert_alpha()
 title_img = pygame.image.load('data/images/title_image.png').convert_alpha()
 health_bar_img = pygame.image.load('data/images/health_bar.png').convert_alpha()
@@ -201,11 +208,16 @@ class Level():
         tile_rects = []
         global x_tile_positions
         x_tile_positions = []
+        global y_tile_positions
+        y_tile_positions = []
         y = 0
         for layer in self.map:
             x = 0
             for tile in layer:
-                if tile == 'x':
+                if tile == 'y':
+                    y_tile_positions.append(pygame.Rect(int(x), int(y), self.tile_size[0], self.tile_size[1]))
+                    #print("debug: y-tile")
+                elif tile == 'x':
                     x_tile_positions.append(pygame.Rect(int(x), int(y), self.tile_size[0], self.tile_size[1]))
                     # x-tile map position
                 elif tile != '0':
@@ -362,6 +374,7 @@ class Player():
         self.health = 100
         self.living = True
 
+        death_counter_increment()
     # Todes Counter
     def get_death_count(self):
         return self.deaths
@@ -435,7 +448,6 @@ class Player():
         self.frame = frame
 
 
-# TODO
 
 class Enemy():
     def __init__(self, id, start_pos, width, height, health, pathfind_range, attack_range, is_boss=False, level=None):
@@ -628,6 +640,7 @@ class Projectile():
         self.collision_types = {'top': False, 'bottom': False, 'right': False, 'left': False}
 
         hit_list = collision_check(rects, tiles)
+        skin_collected()
 
         for rect in hit_list:
             y_difference = (rect.centery - self.rect.centery)
@@ -709,7 +722,7 @@ levels = {'Tutorial': Level('map0', (600, 490), [(2980, 250)], 1400),
           'Level 1': Level('map1', (830, -100), [(140, -145), (5375, 280), (5215, 345), (7415, 345)], 800),
           'Level 1_5': Level('map1_1', (600, 490), [(2940, 250)], 1400),
           'Level 2': Level('map2', (600, 800), [(255, 445), (1695, -130), (3925, 380), (3915, 0)], 1900),
-          'Level 3': Level('map3', (50, 400), [(1790, 400), (3000, 100)], 1000),
+          'Level 3': Level('map3', (50, 400), [(1790, 400), (3000, 100)], 1300),
           'Level 3_5': Level('map3_5', (295, 100), [(1105, 480), (1855, 600)], 1500),
           'Level 4': Level('map4', (295, 100), [(1105, 480), (1855, 600), (3935, 675), (4385, 925), (5045, 850)], 1500),
           'Level 5': Level('map5', (165, -200), [(4865, 350), (5720, 550), (8205, 350), (10690, 550)], 1500),
@@ -798,21 +811,28 @@ def check_level_change_to(current_level, next_level):
     global player, game_running, main_menu
 
     if current_level == 'Level 3':
-        # map_3_x_tiles is a list of coordinates of 'x'-tiles-position
+    # map_3_x_tiles is a list of coordinates of 'x'-tiles-position
         for tile_pos in x_tile_positions:
-            tile_rect = pygame.Rect(tile_pos[0], tile_pos[1], 64, 64)  # >>>> tile_size = (64,64)
+            tile_rect = pygame.Rect(tile_pos[0], tile_pos[1], 64, 64) #>>>> tile_size = (64,64)
             if tile_rect.colliderect(player.rect):
-                player.change_level(next_level)  # map change to 3_5
+                player.change_level(next_level) #map change to 3_5
                 game_running = True
                 main_menu = False
                 play_bgmusic()
     elif current_level == 'Level 1':
-        if death_counter > 3:
-            player.change_level(next_level)  # map change to 1_5
+        if death_counter > 3 :
+            player.change_level(next_level) # map change to 1_5
             game_running = True
             main_menu = False
             play_bgmusic()
 
+def skin_collected():
+    global show_skin, carrot_locked
+    for tile_pos in y_tile_positions:
+        tile_rect = pygame.Rect(tile_pos[0], tile_pos[1], 64, 64)  # >>>> tile_size = (64,64)
+        if tile_rect.colliderect(player.rect):
+            show_skin = False
+            carrot_locked = False
 
 # Functions
 def collision_check(rect, tiles):
@@ -1075,6 +1095,8 @@ def draw():
 
     if player.level == 'Tutorial':
         display.blit(instruction_img, (380 - scroll[0], 380 - scroll[1]))
+    if player.level == 'Level 3_5' and show_skin:
+        display.blit(carrot_img,(3200 - scroll[0], 200 - scroll[1]))
 
     health_bar_rect = pygame.Rect(94, 1028, player.health * 2, 19)
     pygame.draw.rect(display, (255, 0, 0), health_bar_rect)
@@ -1187,11 +1209,12 @@ def update_badge_status(badge_name):
 
 
 def draw_customize_screen():
-    global player_animations, skin_num
+    global player_animations, skin_num, show_text
     display.fill((180, 235, 235))
     back_button.draw()
     left_button.draw()
     right_button.draw()
+
     # print("debug: skin num", skin_num)
     if skin_num == 0:
         skin_name = "Classic"
@@ -1201,8 +1224,13 @@ def draw_customize_screen():
         skin_name = "Nezuko"
     if skin_num == 3:
         skin_name = "Carrot"
-    display.blit(pixel_font.render(skin_name, True, (0, 0, 0)), (1000, 200))
-
+    display.blit(pixel_font.render(skin_name, True, (0, 0, 0)), (900, 200))
+    if show_text:
+        current_time = pygame.time.get_ticks()
+        if current_time - text_start_time <= text_duration:
+            display.blit(pixel_font.render("Carrot Locked: Try jump in Level 3", True, (0, 0, 0)), (1000, 600))
+        else:
+            show_text = False
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
 
     update_cursor(pygame.mouse.get_pos())
@@ -1439,14 +1467,18 @@ while True:
                         skin_num_increment()
 
                     if back_button.is_over():
-                        customize_menu = False
-                        main_menu = True
-                        select_sound.play()
-                        # update player animation
-                        player_animations = select_skin(skin_num)
-                        player.animation_database = player_animations
-                        enemy_animations = select_enemy_skin()
-                        Enemy.animation_database = enemy_animations
+                        if skin_num == 3 and carrot_locked:
+                            show_text = True
+                            text_start_time = pygame.time.get_ticks()
+                        else:
+                            customize_menu = False
+                            main_menu = True
+                            select_sound.play()
+                            # update player animation
+                            player_animations = select_skin(skin_num)
+                            player.animation_database = player_animations
+                            enemy_animations = select_enemy_skin()
+                            Enemy.animation_database = enemy_animations
 
         left_button.update()
         right_button.update()
@@ -1709,7 +1741,7 @@ while True:
             if player_type == 'Achiever':
                 if start_time is None:
                     start_time = time.time()
-            if enemies == []:
+            elif enemies == []:
                 if player_type == 'Achiever':
                     update_badge_status("Erledige den ersten Boss")
                 fade_out = True
@@ -1718,8 +1750,18 @@ while True:
                     fade_in = True
                     play_bgmusic()
                     player.change_level('Level 2')
-                elif game_running and player_type == 'Free Spirit':
-                    check_level_change_to(player.level, 'Level 1_5')
+            elif game_running and player_type == 'Free Spirit':
+                check_level_change_to('Level 1', 'Level 1_5')
+
+        elif player.level == 'Level 1_5':
+            if enemies == []:
+                fade_out = True
+                pygame.mixer.music.fadeout(1000)
+                if fade_alpha >= 300:
+                    fade_in = True
+                    play_bgmusic()
+                    player.change_level('Level 2')
+
         elif player.level == 'Level 2':
             if enemies == []:
                 fade_out = True
@@ -1730,16 +1772,19 @@ while True:
                     player.change_level('Level 3')
         elif player.level == 'Level 3':
             if enemies == []:
-                if player_type == 'Achiever':
-                    update_badge_status("Erledige den zweiten Boss")
                 fade_out = True
                 pygame.mixer.music.fadeout(1000)
                 if fade_alpha >= 300:
                     fade_in = True
                     play_bgmusic()
                     player.change_level('Level 4')
-                elif game_running and player_type == 'Free Spirit':
-                    check_level_change_to('Level 3', 'Level 3_5')
+            elif player_type == 'Achiever':
+                update_badge_status("Erledige den zweiten Boss")
+            elif player_type == 'Free Spirit':
+                print("test")
+                check_level_change_to('Level 3', 'Level 3_5')
+
+
         elif player.level == 'Level 4':
             if enemies == []:
                 fade_out = True
