@@ -22,11 +22,13 @@ pygame.mouse.set_visible(False)
 FPS = 60
 last_time = time.time()
 save_number = 0
-main_menu = True
+main_menu = False
 load_game_menu = False
 game_running = False
 escape_menu = False
 win_screen = False
+survey_screen = True
+customize_menu = False
 fade_out = False
 fade_in = False
 fade_alpha = 0
@@ -39,13 +41,12 @@ x_tile_positions = []
 particles = []
 enemies = []
 skin_num = 0
-survey_screen = False
+player_type = " "
 
 show_badges = False
 name_entered = False
 death_counter = 0
 shots_fired = 0
-Achiever = False
 
 # Load Images
 cursor = pygame.transform.scale(pygame.image.load('data/images/cursor.png'), (32, 32)).convert()
@@ -132,6 +133,16 @@ def select_skin(skin_num):
 
 
 player_animations1 = select_skin(skin_num)
+
+
+def select_enemy_skin():
+    if skin_num == 3:
+        return load_animations(['Idle', 'Walking'], 'enemy_images_tomato')
+    else:
+        return load_animations(['Idle', 'Walking'], 'enemy_images')
+
+
+enemy_animations_new = select_enemy_skin()
 
 player_animations = load_animations(['Running', 'Idle', 'Walking'], 'player_images')
 enemy_animations = load_animations(['Idle', 'Walking'], 'enemy_images')
@@ -345,7 +356,7 @@ class Player():
             enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900))
             enemy_id_counter += 1
         # initialize_enemies() wird aufgerufen
-        if Achiever:
+        if player_type == 'Achiever':
             initialize_enemies()
         pygame.mixer.music.play(-1)
         self.health = 100
@@ -404,7 +415,7 @@ class Player():
         self.level = new_level
         self.rect.topleft = levels[new_level].player_pos
         # initialize_enemies() wird aufgerufen
-        if Achiever:
+        if player_type == 'Achiever':
             initialize_enemies()
         else:
             for enemy_pos in levels[new_level].enemy_pos:
@@ -746,6 +757,22 @@ def initialize_enemies():
 gun = Gun(gun_img)
 
 
+def skin_num_increment():
+    global skin_num
+    if skin_num == 3:
+        skin_num = 0
+    else:
+        skin_num += 1
+
+
+def skin_num_decrement():
+    global skin_num
+    if skin_num == 0:
+        skin_num = 3
+    else:
+        skin_num -= 1
+
+
 def clear_survey_answers():
     with open('answer.txt', 'w') as f:
         pass
@@ -862,8 +889,12 @@ def draw_main_menu():
     new_game_button.draw()
     load_game_button.draw()
     exit_button.draw()
-    badges_button.draw()
+    if player_type == 'Achiever':
+        badges_button.draw()
     survey_button.draw()
+    if player_type == 'Free Spirit':
+        # print('Debug: Free Spirit')
+        customize_button.draw()
     display.blit(title_img, (250, 0))
 
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
@@ -894,7 +925,7 @@ def draw_load_game_menu():
 def draw_win_screen():
     display.fill((180, 235, 235))
 
-    if Achiever:
+    if player_type == 'Achiever':
         formatted_time = time.strftime("%M:%S", time.gmtime(end_level_time))
         pygame.display.update()
 
@@ -1154,6 +1185,30 @@ def update_badge_status(badge_name):
         f.writelines(badges)
 
 
+def draw_customize_screen():
+    global player_animations, skin_num
+    display.fill((180, 235, 235))
+    back_button.draw()
+    left_button.draw()
+    right_button.draw()
+    # print("debug: skin num", skin_num)
+    if skin_num == 0:
+        skin_name = "Classic"
+    if skin_num == 1:
+        skin_name = "Chad"
+    if skin_num == 2:
+        skin_name = "Nezuko"
+    if skin_num == 3:
+        skin_name = "Carrot"
+    display.blit(pixel_font.render(skin_name, True, (0, 0, 0)), (1000, 200))
+
+    screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
+
+    update_cursor(pygame.mouse.get_pos())
+
+    pygame.display.update()
+
+
 questions = [
     ": It is important to me to follow my own path",  # f1 freespirit
     "Being independent is important to me",  # f3
@@ -1221,6 +1276,7 @@ response_mapping = {
 
 
 def survey_mapping(response_mapping):
+    global player_type
     # Read the responses from the text file
     with open('answer.txt', 'r') as file:
         lines = file.readlines()
@@ -1265,6 +1321,8 @@ def survey_mapping(response_mapping):
     player_type_names = ['Socializer', 'Achiever', 'Player', 'Free Spirit']  # socializer not in use
     classified_player_types = [player_type_names[i] for i in player_types]
 
+    player_type = classified_player_types[0]
+
     # Output the player types for each respondent
     print("Responses:", responses)
     print("Factor Scores:\n", factor_scores)
@@ -1291,7 +1349,10 @@ while True:
         load_game_button = Button(560, 800, 800, 150, (75, 160, 173), "Load Game ({}/9)".format(len(get_saves())),
                                   (0, 0, 0), pixel_font_large)
         survey_button = Button(120, 800, 400, 100, (75, 160, 173), "Take Survey", (0, 0, 0), pixel_font_large)
-        badges_button = Button(120, 300, 300, 100, (255, 50, 255), "Badges", (0, 0, 0), pixel_font_large)
+        if player_type == 'Free Spirit':
+            customize_button = Button(150, 650, 300, 100, (75, 160, 173), "Customize", (0, 0, 0), pixel_font_large)
+        if player_type == 'Achiever':
+            badges_button = Button(120, 300, 300, 100, (255, 50, 255), "Badges", (0, 0, 0), pixel_font_large)
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -1323,14 +1384,20 @@ while True:
                                 main_menu = False
                                 select_sound.play()
                                 play_bgmusic()
-                    if badges_button.is_over():
-                        show_badges = True
-                        main_menu = False
-                        select_sound.play()
+                    if player_type == 'Achiever':
+                        if badges_button.is_over():
+                            show_badges = True
+                            main_menu = False
+                            select_sound.play()
                     if survey_button.is_over():
                         survey_screen = True
                         main_menu = False
                         select_sound.play()
+                    if player_type == 'Free Spirit':
+                        if customize_button.is_over():
+                            customize_menu = True
+                            main_menu = False
+                            select_sound.play()
                     if load_game_button.is_over():
                         load_game_menu = True
                         main_menu = False
@@ -1339,9 +1406,52 @@ while True:
         new_game_button.update()
         load_game_button.update()
         exit_button.update()
-        badges_button.update()
+        if player_type == 'Achiever':
+            badges_button.update()
         survey_button.update()
+        if player_type == 'Free Spirit':
+            customize_button.update()
         draw_main_menu()
+
+    if customize_menu:
+
+        left_button = Button(560, 200, 80, 80, (75, 189, 73), '<', (0, 0, 0), pixel_font_large)
+        right_button = Button(1560, 200, 80, 80, (75, 189, 73), '>', (0, 0, 0), pixel_font_large)
+        back_button = Button(1560, 900, 200, 90, (255, 50, 50), "Back", (0, 0, 0), pixel_font_large)
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == KEYDOWN:
+                if event.key == pygame.K_f:
+                    screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
+                if event.key == pygame.K_ESCAPE:
+                    screen = pygame.display.set_mode(WINDOW_SIZE)
+
+            if event.type == MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if left_button.is_over():
+                        skin_num_decrement()
+                    if right_button.is_over():
+                        skin_num_increment()
+
+                    if back_button.is_over():
+                        customize_menu = False
+                        main_menu = True
+                        select_sound.play()
+                        # update player animation
+                        player_animations = select_skin(skin_num)
+                        player.animation_database = player_animations
+                        enemy_animations = select_enemy_skin()
+                        Enemy.animation_database = enemy_animations
+
+        left_button.update()
+        right_button.update()
+
+        back_button.update()
+        draw_customize_screen()
 
     if show_badges:
         back_button = Button(500, 800, 200, 90, (255, 50, 50), "Back", (0, 0, 0), pixel_font_large)
@@ -1548,6 +1658,8 @@ while True:
                     bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15,
                                               math.atan2(slopey, slopex), projectile_img))
                     shoot_sound.play()
+                    bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15,
+                                              math.atan2(slopey, slopex), projectile_img))
                     shots_fired += 1
 
             if event.type == KEYDOWN:
@@ -1582,7 +1694,7 @@ while True:
 
         # level-change conditions
         if player.level == 'Tutorial':
-            if Achiever:
+            if player_type == 'Achiever':
                 player.deaths = 0
                 shots_fired = 0
             if enemies == []:
@@ -1593,11 +1705,11 @@ while True:
                     play_bgmusic()
                     player.change_level('Level 1')
         elif player.level == 'Level 1':
-            if Achiever:
+            if player_type == 'Achiever':
                 if start_time is None:
                     start_time = time.time()
             if enemies == []:
-                if Achiever:
+                if player_type == 'Achiever':
                     update_badge_status("Erledige den ersten Boss")
                 fade_out = True
                 pygame.mixer.music.fadeout(1000)
@@ -1605,6 +1717,8 @@ while True:
                     fade_in = True
                     play_bgmusic()
                     player.change_level('Level 2')
+                elif game_running and player_type == 'Free Spirit':
+                    check_level_change_to(player.level, 'Level 1_5')
         elif player.level == 'Level 2':
             if enemies == []:
                 fade_out = True
@@ -1615,7 +1729,7 @@ while True:
                     player.change_level('Level 3')
         elif player.level == 'Level 3':
             if enemies == []:
-                if Achiever:
+                if player_type == 'Achiever':
                     update_badge_status("Erledige den zweiten Boss")
                 fade_out = True
                 pygame.mixer.music.fadeout(1000)
@@ -1623,6 +1737,8 @@ while True:
                     fade_in = True
                     play_bgmusic()
                     player.change_level('Level 4')
+                elif game_running and player_type == 'Free Spirit':
+                    check_level_change_to('Level 3', 'Level 3_5')
         elif player.level == 'Level 4':
             if enemies == []:
                 fade_out = True
@@ -1630,7 +1746,7 @@ while True:
                 if fade_alpha >= 300:
                     fade_in = True
                     play_bgmusic()
-                if Achiever:
+                if player_type == 'Achiever':
                     player.change_level('Level 5_5')
                 else:
                     player.change_level('Level 5')
