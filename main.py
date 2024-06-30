@@ -23,12 +23,13 @@ pygame.mouse.set_visible(False)
 FPS = 60
 last_time = time.time()
 save_number = 0
-main_menu = True
+main_menu = False
 load_game_menu = False
 game_running = False
 escape_menu = False
 win_screen = False
-survey_screen = False
+survey_screen = True
+customize_menu = False
 fade_out = False
 fade_in = False
 fade_alpha = 0
@@ -44,8 +45,7 @@ death_counter = 0
 
 skin_num = 0
 
-
-Achiever = False
+player_type = " "
 
 # Load Images
 cursor = pygame.transform.scale(pygame.image.load('data/images/cursor.png'), (32, 32)).convert()
@@ -113,9 +113,15 @@ player_animations = select_skin(skin_num)
 #player_animations = load_animations(['Running', 'Idle', 'Walking'], 'player_images')
 #new skins
 #player_animations_chad = load_animations(['Running', 'Idle', 'Walking'], 'player_images_chad')
-enemy_animations = load_animations(['Idle', 'Walking'], 'enemy_images')
+#enemy_animations = load_animations(['Idle', 'Walking'], 'enemy_images')
+def select_enemy_skin():
 
+    if skin_num == 3:
+        return load_animations(['Idle', 'Walking'], 'enemy_images_tomato')
+    else:
+        return  load_animations(['Idle', 'Walking'], 'enemy_images')
 
+enemy_animations = select_enemy_skin()
 
 # Load sounds
 death_sound = pygame.mixer.Sound('data/sounds/death.wav')
@@ -180,7 +186,7 @@ class Level():
 
 
 
-#TODO: tile for map change
+
     def draw(self):
         y = 0
         for layer in self.map:
@@ -337,6 +343,7 @@ class Player():
             f.write(save_data_string)
             f.close()
 
+
         #reset everything
         enemies.clear()
         particles.clear()
@@ -349,6 +356,8 @@ class Player():
         self.rect.topleft = levels[new_level].player_pos
         for enemy_pos in levels[new_level].enemy_pos:
             enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900))
+
+        #npc_position = levels[self.level].player_pos
 
     def looking(self, mousepos):
         if mousepos[0] <= self.rect.centerx - scroll[0]:
@@ -630,10 +639,25 @@ for enemy_pos in levels[player.level].enemy_pos:
 gun = Gun(gun_img)
 
 #Functions
+def skin_num_increment():
+    global skin_num
+    if skin_num == 3:
+        skin_num = 0
+    else:
+        skin_num += 1
+
+def skin_num_decrement():
+    global skin_num
+    if skin_num == 0:
+        skin_num = 3
+    else:
+        skin_num -= 1
+
 
 def clear_survey_answers():
     with open('answer.txt', 'w') as f:
         pass
+
 def death_counter_increment():
     global death_counter
     death_counter += 1
@@ -665,6 +689,7 @@ def check_level_change_to(current_level, next_level):
             game_running = True
             main_menu = False
             play_bgmusic()
+
 
 
 
@@ -737,6 +762,9 @@ def draw_main_menu():
     load_game_button.draw()
     exit_button.draw()
     survey_button.draw()
+    if player_type == 'Free Spirit':
+        #print('Debug: Free Spirit')
+        customize_button.draw()
     display.blit(title_img, (250, 0))
 
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
@@ -855,13 +883,40 @@ def draw():
 
     pygame.display.update()
 
+
+def draw_customize_screen():
+    global player_animations, skin_num
+    display.fill((180, 235, 235))
+    back_button.draw()
+    left_button.draw()
+    right_button.draw()
+    #print("debug: skin num", skin_num)
+    if skin_num == 0:
+        skin_name = "Classic"
+    if skin_num == 1:
+        skin_name = "Chad"
+    if skin_num == 2:
+        skin_name = "Nezuko"
+    if skin_num == 3:
+        skin_name = "Carrot"
+    display.blit(pixel_font.render(skin_name, True, (0, 0, 0)), (1000, 200))
+
+
+    screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
+
+    update_cursor(pygame.mouse.get_pos())
+
+    pygame.display.update()
+
+
+
 questions = [
-    ": It is important to me to follow my own path", #f1 freespirit
+    "It is important to me to follow my own path", #f1 freespirit
     "Being independent is important to me", #f3
     "Rewards are a great way to motivate me", #r2 player
-    " If the reward is sufficient, I will put in the effort", #r4
-    " I like mastering difficult tasks", #a2 achiever
-    " I enjoy emerging victorious out of difficult circumstances", #a4
+    "If the reward is sufficient, I will put in the effort", #r4
+    "I like mastering difficult tasks", #a2 achiever
+    "I enjoy emerging victorious out of difficult circumstances", #a4
     #" I like being part of a team", #s2 socializer
     #"I enjoy group activities", #s4
     #"Question 9?",
@@ -909,8 +964,6 @@ def draw_survey_screen():
     pygame.display.update()
 
 
-
-
 response_mapping = {
     "Strongly Disagree": 1,
     "Disagree": 2,
@@ -920,27 +973,25 @@ response_mapping = {
     "Agree": 6,
     "Strongly Agree": 7
 }
+
 def survey_mapping(response_mapping):
+    global player_type
     # Read the responses from the text file
     with open('answer.txt', 'r') as file:
         lines = file.readlines()
 
-    # Parse the responses and convert to numerical values
     responses = []
     for line in lines:
         try:
-            # Split the line and strip whitespace
             question, response = line.split(': ')
-            # Append the mapped numerical value
             responses.append(response_mapping[response.strip()])
         except (ValueError, KeyError) as e:
-            # Handle lines that don't match the expected format or unknown responses
             print(f"Skipping line due to error: {line.strip()} - {e}")
 
     # Convert to numpy array and reshape (1 respondent x 6 questions)
     responses_array = np.array(responses).reshape(1, -1)
 
-    # Standardized loadings (β) with comments indicating the question and player type
+    # Standardized loadings (β)
     full_loadings = np.zeros((6, 4))
 
     # Free Spirit
@@ -955,23 +1006,21 @@ def survey_mapping(response_mapping):
     full_loadings[4, 1] = 0.68  # Q5
     full_loadings[5, 1] = 0.75  # Q6
 
-    # Compute factor scores
     factor_scores = np.dot(responses_array, full_loadings)
 
-    # Determine player types
     player_types = np.argmax(factor_scores, axis=1)
 
-    # Map indices to player type names
     player_type_names = ['Socializer', 'Achiever', 'Player', 'Free Spirit']   #socializer not in use
     classified_player_types = [player_type_names[i] for i in player_types]
 
-    # Output the player types for each respondent
-    print("Responses:", responses)
-    print("Factor Scores:\n", factor_scores)
-    print("Classified Player Type:\n", classified_player_types[0])
+    #print("Debug: Responses", responses)
+    #print("Debug: Factor Scores:\n", factor_scores)
 
+    player_type = classified_player_types[0]
+    #print("Debug: Classified Player Type:\n", player_type)
     clear_survey_answers()
-    print("cleared")
+
+    #print("Debug: cleared")
 
 
 # Main Loop
@@ -988,7 +1037,9 @@ while True:
         new_game_button = Button(560, 550, 800, 200, (75, 173, 89), "New Game", (0, 0, 0), pixel_font_large)
         exit_button = Button(1500, 900, 300, 100, (255, 50, 50), "Exit to desktop", (0, 0, 0), pixel_font_large)
         load_game_button = Button(560, 800, 800, 200, (75, 160, 173), "Load Game ({}/9)".format(len(get_saves())), (0, 0, 0), pixel_font_large)
-        survey_button = Button(260, 1050, 800, 200, (75, 160, 173), "Take Survey", (0, 0, 0), pixel_font_large)
+        survey_button = Button(1500, 650, 300, 100, (75, 160, 173), "Take Survey", (0, 0, 0), pixel_font_large)
+        if player_type == 'Free Spirit':
+            customize_button = Button(150, 650, 300, 100, (75, 160, 173), "Customize", (0, 0, 0), pixel_font_large)
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -1028,13 +1079,62 @@ while True:
                         survey_screen = True
                         main_menu = False
                         select_sound.play()
+                    if player_type == 'Free Spirit':
+                        if customize_button.is_over():
+                            customize_menu = True
+                            main_menu = False
+
+                            select_sound.play()
 
         new_game_button.update()
         load_game_button.update()
         exit_button.update()
         survey_button.update()
+        if player_type == 'Free Spirit':
+            customize_button.update()
+
         draw_main_menu()
 
+    if customize_menu:
+
+
+        left_button = Button(560, 200, 80, 80, (75, 189, 73), '<', (0, 0, 0), pixel_font_large)
+        right_button = Button(1560, 200, 80, 80, (75, 189, 73), '>', (0, 0, 0), pixel_font_large)
+        back_button = Button(1560, 900, 200, 90, (255, 50, 50), "Back", (0, 0, 0), pixel_font_large)
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == KEYDOWN:
+                if event.key == pygame.K_f:
+                    screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
+                if event.key == pygame.K_ESCAPE:
+                    screen = pygame.display.set_mode(WINDOW_SIZE)
+
+            if event.type == MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if left_button.is_over():
+                        skin_num_decrement()
+                    if right_button.is_over():
+                        skin_num_increment()
+
+                    if back_button.is_over():
+                        customize_menu = False
+                        main_menu = True
+                        select_sound.play()
+                        #update player animation
+                        player_animations = select_skin(skin_num)
+                        player.animation_database = player_animations
+                        enemy_animations = select_enemy_skin()
+                        Enemy.animation_database = enemy_animations
+
+        left_button.update()
+        right_button.update()
+
+        back_button.update()
+        draw_customize_screen()
     if survey_screen:
         draw_survey_screen()
 
@@ -1196,7 +1296,7 @@ while True:
         scroll[0] += int((player.rect.x - scroll[0] - (WINDOW_SIZE[0]/2 + player.width/2))/18) * dt
         scroll[1] += int((player.rect.y - scroll[1] - (WINDOW_SIZE[1]/2 + player.height/2))/18) * dt
 
-    # Events
+    #Events
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
@@ -1207,8 +1307,7 @@ while True:
                     mx, my = event.pos
                     slopex = mx - (player.rect.centerx - scroll[0] + 5)
                     slopey = my - (player.rect.centery - scroll[1] + 35)
-                    bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, (15 + (death_counter)), math.atan2(slopey, slopex), projectile_img))
-                    #todo bullet change dmg
+                    bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15 , math.atan2(slopey, slopex), projectile_img))
                     shoot_sound.play()
 
             if event.type == KEYDOWN:
@@ -1240,7 +1339,7 @@ while True:
             player.die()
         if player.health <= 0:
             player.die()
-#TODO: level change condition
+
     # level-change conditions
         """
         if array of enemies is empty -> new level 
@@ -1263,7 +1362,7 @@ while True:
                     play_bgmusic()
                     player.change_level('Level 2')
 
-            elif game_running:
+            elif game_running and player_type == 'Free Spirit':
                 check_level_change_to(player.level, 'Level 1_5')
 
         elif player.level == 'Level 1_5':
@@ -1293,7 +1392,7 @@ while True:
                     play_bgmusic()
                     player.change_level('Level 4')
 
-            elif game_running:
+            elif game_running and player_type == 'Free Spirit':
                 check_level_change_to('Level 3', 'Level 3_5')
 
         elif player.level == 'Level 3_5':
@@ -1320,7 +1419,7 @@ while True:
                 game_running = False
                 win_screen = True
                 play_win_music()
-#todo:: player attack dmg
+
     # player bullets
         for bullet in bullets:
             if len(bullets) <= 20:
