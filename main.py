@@ -470,10 +470,18 @@ class Player():
 
 
 def levelup():
+    global skin_num
     if player.xp < 100 and player.player_level < 3:
         player.xp += 25
         if player.xp >= 100 and player.player_level < 3:
             player.player_level += 1
+            if player.player_level == 2:
+                skin_num = 1
+                player.animation_database = select_skin(skin_num)
+            elif player.player_level == 3:
+                skin_num = 2
+                player.animation_database = select_skin(skin_num)
+
             player.xp = 0
 
 
@@ -780,7 +788,6 @@ def useitem(item):
         if main.DMG == 15:
             main.DMG += 10
             main.DMGCount = 0
-            print(main.DMG)
             main.potions_dmg -= 1
         else:
             main.DMGCount = 0
@@ -1813,12 +1820,9 @@ while True:
                     shots_fired += 1
                     if DMGCount <= 4:
                         DMGCount += 1
-                        print(DMGCount)
                     else:
                         DMGCount = 0
                         DMG = 15
-                        print(DMG)
-                        print(DMGCount)
 
                 if shop_open:
                     if dmg_potion_button.is_over():
