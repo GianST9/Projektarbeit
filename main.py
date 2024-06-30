@@ -3,6 +3,8 @@ import numpy as np
 from operator import sub
 from pygame.locals import *
 
+import main
+
 pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.init()
 clock = pygame.time.Clock()
@@ -54,6 +56,15 @@ name_entered = False
 death_counter = 0
 shots_fired = 0
 
+DMG = 15
+DMGCount = 0
+shop_open = False
+potions_dmg = 0
+potions_heal = 0
+coins = 5
+text01 = "Buy: Heal Potion 1 coin"
+text02 = "Buy: Damage Potion 3 coin"
+
 # Load Images
 cursor = pygame.transform.scale(pygame.image.load('data/images/cursor.png'), (32, 32)).convert()
 cursor.set_colorkey((255, 255, 255))
@@ -62,6 +73,10 @@ carrot_img = pygame.transform.scale(pygame.image.load('data/player_image_carrot/
 instruction_img = pygame.image.load('data/images/instructions.png').convert_alpha()
 title_img = pygame.image.load('data/images/title_image.png').convert_alpha()
 health_bar_img = pygame.image.load('data/images/health_bar.png').convert_alpha()
+xp_bar_img = pygame.image.load('data/images/XP_bar.png')
+heal_potion_img = pygame.image.load('data/items/heart0.png')
+dmg_potion_img = pygame.image.load('data/items/dmg.png')
+coin_img = pygame.image.load('data/items/coin.png')
 overlay_img = pygame.transform.scale(pygame.image.load('data/images/black_overlay.png').convert(), WINDOW_SIZE)
 overlay_img.set_alpha(150)
 
@@ -157,6 +172,8 @@ enemy_animations = load_animations(['Idle', 'Walking'], 'enemy_images')
 boss_animations_one = load_animations(['Idle', 'Walking'], 'enemy_images_level_one')
 boss_animations_three = load_animations(['Idle', 'Walking'], 'enemy_images_level_three')
 boss_animations_five = load_animations(['Idle', 'Walking'], 'enemy_images_level_five')
+# Lade NPC animation
+npc_animation = pygame.transform.scale(pygame.image.load('data/npc_images/NPC.png'), (350, 350))
 
 # Load sounds
 death_sound = pygame.mixer.Sound('data/sounds/death.wav')
@@ -295,6 +312,8 @@ class Level():
 class Player():
     def __init__(self, width, height, vel, jump_height, health):
         self.vel = vel
+        self.player_level = 1
+        self.xp = 0
         self.width = width
         self.height = height
         self.jump_height = jump_height
@@ -427,6 +446,8 @@ class Player():
         self.health = 100
         self.level = new_level
         self.rect.topleft = levels[new_level].player_pos
+        Npc.level = new_level
+        NPC.rect.topleft = levels[new_level].player_pos
         # initialize_enemies() wird aufgerufen
         if player_type == 'Achiever':
             initialize_enemies()
@@ -446,6 +467,33 @@ class Player():
             frame = 0
         self.action = current_action
         self.frame = frame
+
+
+def levelup():
+    if player.xp < 100 and player.player_level < 3:
+        player.xp += 25
+        if player.xp >= 100 and player.player_level < 3:
+            player.player_level += 1
+            player.xp = 0
+
+
+class Npc:
+
+    def __init__(self, width, height, vel):
+        self.vel = vel
+        self.width = width
+        self.height = height
+        self.flip = False
+        self.vertical_momentum = 0
+        self.frame = 0
+        self.action = 'Idle'
+        self.level = 'Tutorial'
+        self.rect = pygame.Rect(int(levels[self.level].player_pos[0]), int(levels[self.level].player_pos[1]),
+                                self.width, self.height)
+
+    def draw(self):
+        display.blit(pygame.transform.flip(npc_animation, self.flip, False),
+                     (int(self.rect.x + 60 - scroll[0]), int(self.rect.y - 40 - scroll[1])))
 
 
 
@@ -717,6 +765,28 @@ class Button():
         display.blit(self.rendered_text, (self.text_rect.x, self.text_rect.y))
 
 
+def useitem(item):
+     #global DMG
+     #global DMGCount
+    if item == 'Potion':
+        if player.health <= 80:
+            player.health += 20
+            main.potions_heal -= 1
+        else:
+            player.health = 100
+            main.potions_heal -= 1
+
+    if item == 'DMG':
+        if main.DMG == 15:
+            main.DMG += 10
+            main.DMGCount = 0
+            print(main.DMG)
+            main.potions_dmg -= 1
+        else:
+            main.DMGCount = 0
+            main.potions_dmg -= 1
+
+
 # Create classes
 levels = {'Tutorial': Level('map0', (600, 490), [(2980, 250)], 1400),
           'Level 1': Level('map1', (830, -100), [(140, -145), (5375, 280), (5215, 345), (7415, 345)], 800),
@@ -732,6 +802,8 @@ for level in levels:
     levels[level].load_map()
 
 player = Player(75, 125, 10, 28, 500)
+#if player_type == 'Player':
+NPC = Npc(75, 125, 10)
 
 enemy_id_counter = 0
 for enemy_pos in levels[player.level].enemy_pos:
@@ -1082,6 +1154,9 @@ def draw():
 
     player.draw()
 
+    if player_type == 'Player':
+        NPC.draw()
+
     for particle in particles:
         particle.draw()
 
@@ -1101,6 +1176,25 @@ def draw():
     health_bar_rect = pygame.Rect(94, 1028, player.health * 2, 19)
     pygame.draw.rect(display, (255, 0, 0), health_bar_rect)
     display.blit(health_bar_img, (30, 1000))
+
+    if player_type == 'Player':
+        xp_bar_rect = pygame.Rect(94, 928, player.xp * 2, 19)
+        pygame.draw.rect(display, (0, 255, 0), xp_bar_rect)
+        display.blit(xp_bar_img, (30, 900))
+        xp_gain = pixel_font.render('Lv: ' + str(player.player_level), 1, (0, 0, 0))
+        display.blit(xp_gain, (310, 915))
+
+        display.blit(heal_potion_img, (30, 800))
+        display.blit(dmg_potion_img, (30, 750))
+        display.blit(coin_img, (40, 700))
+
+        heal_potion_text = pixel_font.render(str(main.potions_heal), 1, (0, 0, 0))
+        dmg_potion_text = pixel_font.render(str(main.potions_dmg), 1, (0, 0, 0))
+        coins_text = pixel_font.render(str(main.coins), 1, (0, 0, 0))
+
+        display.blit(heal_potion_text, (100, 800))
+        display.blit(dmg_potion_text, (100, 750))
+        display.blit(coins_text, (100, 700))
 
     level_text = pixel_font.render(player.level, 1, (0, 0, 0))
     display.blit(level_text, (30, 30))
@@ -1147,6 +1241,25 @@ def draw():
     update_cursor(pygame.mouse.get_pos())
 
     pygame.display.update()
+
+    def draw_shop():
+        heal_potion_button = Button(710, 265, 500, 150, (50, 200, 50), text01, (0, 0, 0),
+                                    pixel_font_large)
+        dmg_potion_button = Button(710, 465, 500, 150, (75, 160, 173), text02, (0, 0, 0),
+                                   pixel_font_large)
+        dmg_potion_button.update()
+        heal_potion_button.update()
+        heal_potion_button.draw()
+        dmg_potion_button.draw()
+
+        screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
+
+        update_cursor(pygame.mouse.get_pos())
+
+        pygame.display.update()
+
+    if shop_open:
+        draw_shop()
 
 
 def draw_display_badges():
@@ -1672,6 +1785,10 @@ while True:
 
     levels[player.level].create_map_hitbox()
     if game_running:
+        heal_potion_button = Button(710, 265, 500, 150, (50, 200, 50), text01, (0, 0, 0),
+                                    pixel_font_large)
+        dmg_potion_button = Button(710, 465, 500, 150, (75, 160, 173), text02, (0, 0, 0),
+                                   pixel_font_large)
         levels[player.level].timer += dt
 
         scroll[0] += int((player.rect.x - scroll[0] - (WINDOW_SIZE[0] / 2 + player.width / 2)) / 18) * dt
@@ -1694,6 +1811,29 @@ while True:
                     bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15,
                                               math.atan2(slopey, slopex), projectile_img))
                     shots_fired += 1
+                    if DMGCount <= 4:
+                        DMGCount += 1
+                        print(DMGCount)
+                    else:
+                        DMGCount = 0
+                        DMG = 15
+                        print(DMG)
+                        print(DMGCount)
+
+                if shop_open:
+                    if dmg_potion_button.is_over():
+                        if potions_dmg < 2 and main.coins >= 3:
+                            potions_dmg += 1
+                            main.coins -= 3
+                            if potions_dmg == 2:
+                                text02 = 'Out of Stock'
+
+                    if heal_potion_button.is_over():
+                        if potions_heal < 3 and main.coins >= 1:
+                            potions_heal += 1
+                            main.coins -= 1
+                            if potions_heal == 3:
+                                text01 = 'out of stock'
 
             if event.type == KEYDOWN:
                 if event.key == pygame.K_d:
@@ -1709,6 +1849,20 @@ while True:
                     screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
                 if event.key == pygame.K_ESCAPE:
                     escape_menu = True
+                    shop_open = False
+                if event.key == pygame.K_q and player_type == 'Player':
+                    if potions_heal > 0:
+                        text01 = "Buy: Heal Potion 1 coin"
+                        useitem('Potion')
+                if event.key == pygame.K_e and player_type == 'Player':
+                    if potions_dmg > 0:
+                        text02 = "Buy: Damage Potion 3 coin"
+                        useitem('DMG')
+                if event.key == pygame.K_b and player_type == 'Player':
+                    if not shop_open:
+                        shop_open = True
+                    else:
+                        shop_open = False
 
             if event.type == KEYUP:
                 if event.key == pygame.K_d:
@@ -1921,6 +2075,8 @@ while True:
         # enemy die conditions
         for enemy in enemies:
             if enemy.health <= 0 or enemy.rect.y >= levels[player.level].die_height:
+                main.levelup()
+                main.coins += random.randint(1, 3)
                 enemies.remove(enemy)
                 enemy_death_sound.play()
                 for i in range(50):
