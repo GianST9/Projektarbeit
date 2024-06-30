@@ -109,7 +109,7 @@ def load_animations(actions, folder_name):  # (['Running', 'Idle'], 'player_imag
         image_path = 'data/' + folder_name + '/' + action
         animation_database.update({action: []})
         for image in os.listdir(image_path):
-            if not image.endswith(('png', 'jpg', 'jpeg')):  # Ignoriere nicht unterstützte Formate wie .DS_Store
+            if not image.endswith(('png', 'jpg', 'jpeg', 'gif')):  # Ignoriere nicht unterstützte Formate wie .DS_Store
                 continue
             try:
                 image_id = pygame.image.load(image_path + '/' + image).convert_alpha()
@@ -707,6 +707,7 @@ class Button():
 # Create classes
 levels = {'Tutorial': Level('map0', (600, 490), [(2980, 250)], 1400),
           'Level 1': Level('map1', (830, -100), [(140, -145), (5375, 280), (5215, 345), (7415, 345)], 800),
+          'Level 1_5': Level('map1_1', (600, 490), [(2940, 250)], 1400),
           'Level 2': Level('map2', (600, 800), [(255, 445), (1695, -130), (3925, 380), (3915, 0)], 1900),
           'Level 3': Level('map3', (50, 400), [(1790, 400), (3000, 100)], 1000),
           'Level 3_5': Level('map3_5', (295, 100), [(1105, 480), (1855, 600)], 1500),
@@ -1417,7 +1418,7 @@ while True:
 
         left_button = Button(560, 200, 80, 80, (75, 189, 73), '<', (0, 0, 0), pixel_font_large)
         right_button = Button(1560, 200, 80, 80, (75, 189, 73), '>', (0, 0, 0), pixel_font_large)
-        back_button = Button(1560, 900, 200, 90, (255, 50, 50), "Back", (0, 0, 0), pixel_font_large)
+        back_button = Button(500, 800, 200, 90, (255, 50, 50), "Back", (0, 0, 0), pixel_font_large)
 
         for event in pygame.event.get():
             if event.type == QUIT:
