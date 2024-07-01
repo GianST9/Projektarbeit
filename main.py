@@ -1222,6 +1222,19 @@ def draw():
         main_menu_button.draw()
         exit_fullscreen_button.draw()
 
+    def draw_shop():
+        heal_potion_button = Button(710, 265, 500, 150, (50, 200, 50), text01, (0, 0, 0),
+                                    pixel_font_large)
+        dmg_potion_button = Button(710, 465, 500, 150, (75, 160, 173), text02, (0, 0, 0),
+                                   pixel_font_large)
+        dmg_potion_button.update()
+        heal_potion_button.update()
+        heal_potion_button.draw()
+        dmg_potion_button.draw()
+
+    if shop_open:
+        draw_shop()
+
     if escape_menu:
         draw_escape_menu()
 
@@ -1248,25 +1261,6 @@ def draw():
     update_cursor(pygame.mouse.get_pos())
 
     pygame.display.update()
-
-    def draw_shop():
-        heal_potion_button = Button(710, 265, 500, 150, (50, 200, 50), text01, (0, 0, 0),
-                                    pixel_font_large)
-        dmg_potion_button = Button(710, 465, 500, 150, (75, 160, 173), text02, (0, 0, 0),
-                                   pixel_font_large)
-        dmg_potion_button.update()
-        heal_potion_button.update()
-        heal_potion_button.draw()
-        dmg_potion_button.draw()
-
-        screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
-
-        update_cursor(pygame.mouse.get_pos())
-
-        pygame.display.update()
-
-    if shop_open:
-        draw_shop()
 
 
 def draw_display_badges():
@@ -1430,19 +1424,16 @@ def survey_mapping(response_mapping):
     with open('answer.txt', 'r') as file:
         lines = file.readlines()
 
-    # Parse the responses and convert to numerical values
     responses = []
     for line in lines:
         try:
-            # Split the line and strip whitespace
             question, response = line.split(': ')
             # Append the mapped numerical value
             responses.append(response_mapping[response.strip()])
         except (ValueError, KeyError) as e:
-            # Handle lines that don't match the expected format or unknown responses
             print(f"Skipping line due to error: {line.strip()} - {e}")
 
-    # Convert to numpy array and reshape (1 respondent x 6 questions)
+    # 1 respondent x 6 questions
     responses_array = np.array(responses).reshape(1, -1)
 
     # Standardized loadings (β) with comments indicating the question and player type
@@ -1460,28 +1451,22 @@ def survey_mapping(response_mapping):
     full_loadings[4, 1] = 0.68  # Q5
     full_loadings[5, 1] = 0.75  # Q6
 
-    # Compute factor scores
     factor_scores = np.dot(responses_array, full_loadings)
-
-    # Determine player types
+    # sorts for highest value
     player_types = np.argmax(factor_scores, axis=1)
 
-    # Map indices to player type names
     player_type_names = ['Socializer', 'Achiever', 'Player', 'Free Spirit']  # socializer not in use
     classified_player_types = [player_type_names[i] for i in player_types]
 
     player_type = classified_player_types[0]
 
-    # Output the player types for each respondent
-    print("Responses:", responses)
-    print("Factor Scores:\n", factor_scores)
     print("Classified Player Type:\n", classified_player_types[0])
 
     clear_survey_answers()
     print("cleared")
 
 
-# TODO
+
 # Main Loop
 end_level_time = 0
 start_time = None
@@ -1727,6 +1712,30 @@ while True:
         back_button.update()
         draw_load_game_menu()
 
+    if shop_open:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == KEYDOWN:
+                if event.key == pygame.K_b:
+                    shop_open = False
+
+        if dmg_potion_button.is_over():
+            if potions_dmg < 2 and main.coins >= 3:
+                potions_dmg += 1
+                main.coins -= 3
+                if potions_dmg == 2:
+                    text02 = 'Out of Stock'
+
+        if heal_potion_button.is_over():
+            if potions_heal < 3 and main.coins >= 1:
+                potions_heal += 1
+                main.coins -= 1
+                if potions_heal == 3:
+                    text01 = 'out of stock'
+
     if escape_menu:
         resume_button = Button(710, 265, 500, 150, (50, 200, 50), "Resume Game", (0, 0, 0), pixel_font_large)
         main_menu_button = Button(710, 465, 500, 150, (75, 160, 173), "Go to Main Menu", (0, 0, 0), pixel_font_large)
@@ -1824,20 +1833,7 @@ while True:
                         DMGCount = 0
                         DMG = 15
 
-                if shop_open:
-                    if dmg_potion_button.is_over():
-                        if potions_dmg < 2 and main.coins >= 3:
-                            potions_dmg += 1
-                            main.coins -= 3
-                            if potions_dmg == 2:
-                                text02 = 'Out of Stock'
 
-                    if heal_potion_button.is_over():
-                        if potions_heal < 3 and main.coins >= 1:
-                            potions_heal += 1
-                            main.coins -= 1
-                            if potions_heal == 3:
-                                text01 = 'out of stock'
 
             if event.type == KEYDOWN:
                 if event.key == pygame.K_d:
@@ -1863,10 +1859,8 @@ while True:
                         text02 = "Buy: Damage Potion 3 coin"
                         useitem('DMG')
                 if event.key == pygame.K_b and player_type == 'Player':
-                    if not shop_open:
-                        shop_open = True
-                    else:
-                        shop_open = False
+                    shop_open = True
+
 
             if event.type == KEYUP:
                 if event.key == pygame.K_d:
