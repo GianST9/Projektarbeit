@@ -471,18 +471,19 @@ class Player():
 
 def levelup():
     global skin_num
-    if player.xp < 100 and player.player_level < 3:
-        player.xp += 25
-        if player.xp >= 100 and player.player_level < 3:
-            player.player_level += 1
-            if player.player_level == 2:
-                skin_num = 1
-                player.animation_database = select_skin(skin_num)
-            elif player.player_level == 3:
-                skin_num = 2
-                player.animation_database = select_skin(skin_num)
+    if player_type == 'Player':
+        if player.xp < 100 and player.player_level < 3:
+            player.xp += 25
+            if player.xp >= 100 and player.player_level < 3:
+                player.player_level += 1
+                if player.player_level == 2:
+                    skin_num = 1
+                    player.animation_database = select_skin(skin_num)
+                elif player.player_level == 3:
+                    skin_num = 2
+                    player.animation_database = select_skin(skin_num)
 
-            player.xp = 0
+                player.xp = 0
 
 
 class Npc:
@@ -1893,7 +1894,7 @@ while True:
             if player_type == 'Achiever':
                 if start_time is None:
                     start_time = time.time()
-            elif enemies == []:
+            if enemies == []:
                 if player_type == 'Achiever':
                     update_badge_status("Erledige den ersten Boss")
                 fade_out = True
@@ -1933,9 +1934,16 @@ while True:
             elif player_type == 'Achiever':
                 update_badge_status("Erledige den zweiten Boss")
             elif player_type == 'Free Spirit':
-                print("test")
                 check_level_change_to('Level 3', 'Level 3_5')
 
+        elif player.level == 'Level 3_5':
+            if enemies == [] and not show_skin:
+                fade_out = True
+                pygame.mixer.music.fadeout(1000)
+                if fade_alpha >= 300:
+                    fade_in = True
+                    play_bgmusic()
+                    player.change_level('Level 4')
 
         elif player.level == 'Level 4':
             if enemies == []:
