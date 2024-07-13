@@ -69,7 +69,7 @@ text02 = "Buy: Damage Potion 3 coin"
 cursor = pygame.transform.scale(pygame.image.load('data/images/cursor.png'), (32, 32)).convert()
 cursor.set_colorkey((255, 255, 255))
 
-carrot_img = pygame.transform.scale(pygame.image.load('data/player_image_carrot/Idle/Idle1.png'),(128, 128))
+carrot_img = pygame.transform.scale(pygame.image.load('data/player_image_carrot/Idle/Idle1.png'), (128, 128))
 instruction_img = pygame.image.load('data/images/instructions.png').convert_alpha()
 title_img = pygame.image.load('data/images/title_image.png').convert_alpha()
 health_bar_img = pygame.image.load('data/images/health_bar.png').convert_alpha()
@@ -233,7 +233,7 @@ class Level():
             for tile in layer:
                 if tile == 'y':
                     y_tile_positions.append(pygame.Rect(int(x), int(y), self.tile_size[0], self.tile_size[1]))
-                    #print("debug: y-tile")
+                    # print("debug: y-tile")
                 elif tile == 'x':
                     x_tile_positions.append(pygame.Rect(int(x), int(y), self.tile_size[0], self.tile_size[1]))
                     # x-tile map position
@@ -394,6 +394,7 @@ class Player():
         self.living = True
 
         death_counter_increment()
+
     # Todes Counter
     def get_death_count(self):
         return self.deaths
@@ -503,7 +504,6 @@ class Npc:
     def draw(self):
         display.blit(pygame.transform.flip(npc_animation, self.flip, False),
                      (int(self.rect.x + 60 - scroll[0]), int(self.rect.y - 40 - scroll[1])))
-
 
 
 class Enemy():
@@ -775,8 +775,8 @@ class Button():
 
 
 def useitem(item):
-     #global DMG
-     #global DMGCount
+    # global DMG
+    # global DMGCount
     if item == 'Potion':
         if player.health <= 80:
             player.health += 20
@@ -810,12 +810,12 @@ for level in levels:
     levels[level].load_map()
 
 player = Player(75, 125, 10, 28, 500)
-#if player_type == 'Player':
+# if player_type == 'Player':
 NPC = Npc(75, 125, 10)
 
 enemy_id_counter = 0
 for enemy_pos in levels[player.level].enemy_pos:
-    enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900))
+    enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900))
     enemy_id_counter += 1
 
 
@@ -829,21 +829,21 @@ def initialize_enemies():
         # Für die entsprechenden Level, spezielle Eigenschaften für den letzten Feind
         if player.level == "Level 1":
             if idx == len(enemy_positions) - 1:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 200, 900, 900, True, "Level 1"))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 300, 900, 900, True, "Level 1"))
             else:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900, False))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900, False))
         elif player.level == "Level 3":
             if idx == len(enemy_positions) - 1:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 300, 900, 900, True, "Level 3"))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 400, 900, 900, True, "Level 3"))
             else:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900, False))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900, False))
         elif player.level == "Level 5_5":
             if idx == len(enemy_positions) - 1:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 5, 900, 900, True, "Level 5_5"))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 500, 900, 900, True, "Level 5_5"))
             else:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900, False))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900, False))
         else:
-            enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900, False))
+            enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900, False))
 
         enemy_id_counter += 1
 
@@ -891,20 +891,21 @@ def check_level_change_to(current_level, next_level):
     global player, game_running, main_menu
 
     if current_level == 'Level 3':
-    # map_3_x_tiles is a list of coordinates of 'x'-tiles-position
+        # map_3_x_tiles is a list of coordinates of 'x'-tiles-position
         for tile_pos in x_tile_positions:
-            tile_rect = pygame.Rect(tile_pos[0], tile_pos[1], 64, 64) #>>>> tile_size = (64,64)
+            tile_rect = pygame.Rect(tile_pos[0], tile_pos[1], 64, 64)  # >>>> tile_size = (64,64)
             if tile_rect.colliderect(player.rect):
-                player.change_level(next_level) #map change to 3_5
+                player.change_level(next_level)  # map change to 3_5
                 game_running = True
                 main_menu = False
                 play_bgmusic()
     elif current_level == 'Level 1':
-        if death_counter > 3 :
-            player.change_level(next_level) # map change to 1_5
+        if death_counter > 3:
+            player.change_level(next_level)  # map change to 1_5
             game_running = True
             main_menu = False
             play_bgmusic()
+
 
 def skin_collected():
     global show_skin, carrot_locked
@@ -913,6 +914,7 @@ def skin_collected():
         if tile_rect.colliderect(player.rect):
             show_skin = False
             carrot_locked = False
+
 
 # Functions
 def collision_check(rect, tiles):
@@ -1179,7 +1181,7 @@ def draw():
     if player.level == 'Tutorial':
         display.blit(instruction_img, (380 - scroll[0], 380 - scroll[1]))
     if player.level == 'Level 3_5' and show_skin:
-        display.blit(carrot_img,(3200 - scroll[0], 200 - scroll[1]))
+        display.blit(carrot_img, (3200 - scroll[0], 200 - scroll[1]))
 
     health_bar_rect = pygame.Rect(94, 1028, player.health * 2, 19)
     pygame.draw.rect(display, (255, 0, 0), health_bar_rect)
@@ -1465,7 +1467,6 @@ def survey_mapping(response_mapping):
 
     clear_survey_answers()
     print("cleared")
-
 
 
 # Main Loop
@@ -1834,8 +1835,6 @@ while True:
                         DMGCount = 0
                         DMG = 15
 
-
-
             if event.type == KEYDOWN:
                 if event.key == pygame.K_d:
                     player.moving_right = True
@@ -1861,7 +1860,6 @@ while True:
                         useitem('DMG')
                 if event.key == pygame.K_b and player_type == 'Player':
                     shop_open = True
-
 
             if event.type == KEYUP:
                 if event.key == pygame.K_d:
@@ -1963,7 +1961,6 @@ while True:
                 win_screen = True
                 play_win_music()
         elif player.level == 'Level 5_5':
-            start_time = time.time()
             if enemies == []:
                 end_level_time = time.time() - start_time
                 update_badge_status("Erledige den dritten Boss")
@@ -1972,9 +1969,10 @@ while True:
                 game_running = False
                 win_screen = True
                 play_win_music()
-                if end_level_time < 180:
-                    update_badge_status("Schließe das Spiel unter 3 min ab")
-                elif end_level_time < 120:
+                if end_level_time < 120:
+                    update_badge_status("Schließe das Spiel unter 2 min ab")
+                elif end_level_time < 60:
+                    update_badge_status("Schließe das Spiel unter 1 min ab")
                     update_badge_status("Schließe das Spiel unter 2 min ab")
                 if player.deaths == 0:
                     update_badge_status("Schließe das Spiel ab ohne zu sterben")
