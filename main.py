@@ -31,6 +31,8 @@ escape_menu = False
 win_screen = False
 survey_screen = True
 customize_menu = False
+weapon_customize_menu = False
+difficulty_screen = False
 fade_out = False
 fade_in = False
 fade_alpha = 0
@@ -44,6 +46,8 @@ y_tile_positions = []
 particles = []
 enemies = []
 skin_num = 0
+weapon_skin_num = 0
+difficulty = "Normal"
 player_type = " "
 
 text_start_time = 0
@@ -106,7 +110,7 @@ right_bottom_corner_dirt = pygame.transform.flip(
     pygame.image.load('data/images/tiles/bottom_corner_dirt.png').convert_alpha(), True, False)
 bottom_dirt = pygame.image.load('data/images/tiles/bottom_dirt.png').convert_alpha()
 
-gun_img = pygame.image.load('data/images/gun.png').convert_alpha()
+
 
 projectile_img = pygame.image.load('data/images/projectile.png').convert()
 projectile_img.set_colorkey((0, 0, 0))
@@ -155,6 +159,22 @@ def select_skin(skin_num):
 
 
 player_animations1 = select_skin(skin_num)
+
+
+def select_weapon_skin():
+    if weapon_skin_num == 0:
+        return pygame.image.load('data/images/weapons/gun.png').convert_alpha()
+    if weapon_skin_num == 1:
+        return pygame.transform.scale(pygame.transform.flip(pygame.image.load('data/images/weapons/assaultrifle.png').convert_alpha(), True, False), (120,100))
+    if weapon_skin_num == 2:
+        return pygame.transform.scale(pygame.transform.flip(pygame.image.load('data/images/weapons/pistol3.png').convert_alpha(), True, False), (80,80))
+    if weapon_skin_num == 3:
+        return pygame.transform.scale(pygame.transform.flip(pygame.image.load('data/images/weapons/shotgun.png').convert_alpha(), True, False), (80,60))
+    if weapon_skin_num == 4:
+        return pygame.transform.scale(pygame.transform.flip(pygame.image.load('data/images/weapons/smg2.png').convert_alpha(), True, False), (80,80))
+
+
+gun_img = select_weapon_skin()
 
 
 def select_enemy_skin():
@@ -384,7 +404,7 @@ class Player():
         enemy_bullets.clear()
         enemy_id_counter = 0
         for enemy_pos in levels[self.level].enemy_pos:
-            enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900))
+            enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900))
             enemy_id_counter += 1
         # initialize_enemies() wird aufgerufen
         if player_type == 'Achiever':
@@ -453,7 +473,7 @@ class Player():
             initialize_enemies()
         else:
             for enemy_pos in levels[new_level].enemy_pos:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900)) #todo: health
 
     def looking(self, mousepos):
         if mousepos[0] <= self.rect.centerx - scroll[0]:
@@ -798,13 +818,13 @@ def useitem(item):
 # Create classes
 levels = {'Tutorial': Level('map0', (600, 490), [(2980, 250)], 1400),
           'Level 1': Level('map1', (830, -100), [(140, -145), (5375, 280), (5215, 345), (7415, 345)], 800),
-          'Level 1_5': Level('map1_1', (600, 490), [(2940, 250)], 1400),
-          'Level 2': Level('map2', (600, 800), [(255, 445), (1695, -130), (3925, 380), (3915, 0)], 1900),
-          'Level 3': Level('map3', (50, 400), [(1790, 400), (3000, 100)], 1300),
-          'Level 3_5': Level('map3_5', (295, 100), [(1105, 480), (1855, 600)], 1500),
-          'Level 4': Level('map4', (295, 100), [(1105, 480), (1855, 600), (3935, 675), (4385, 925), (5045, 850)], 1500),
-          'Level 5': Level('map5', (165, -200), [(4865, 350), (5720, 550), (8205, 350), (10690, 550)], 1500),
-          'Level 5_5': Level('map5_5', (165, -200), [(4865, 350), (5720, 550), (8205, 350), (11090, 550)], 2500)}
+          'Level 1_5': Level('map1_1', (600, 440), [(2940, 250)], 1400),
+          'Level 2': Level('map2', (600, 750), [(255, 445), (1695, -130), (3925, 380), (3915, 0)], 1900),
+          'Level 3': Level('map3', (50, 350), [(1790, 400), (3000, 100)], 1300),
+          'Level 3_5': Level('map3_5', (295, 50), [(1105, 480), (1855, 600)], 1500),
+          'Level 4': Level('map4', (295, 50), [(1105, 480), (1855, 600), (3935, 675), (4385, 925), (5045, 850)], 1500),
+          'Level 5': Level('map5', (165, -250), [(4865, 350), (5720, 550), (8205, 350), (10690, 550)], 1500),
+          'Level 5_5': Level('map5_5', (165, -250), [(4865, 350), (5720, 550), (8205, 350), (11090, 550)], 2500)}
 
 for level in levels:
     levels[level].load_map()
@@ -815,7 +835,7 @@ NPC = Npc(75, 125, 10)
 
 enemy_id_counter = 0
 for enemy_pos in levels[player.level].enemy_pos:
-    enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900))
+    enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900)) #todo ENEMY HEALTH ON 1 FOR TEST
     enemy_id_counter += 1
 
 
@@ -831,24 +851,25 @@ def initialize_enemies():
             if idx == len(enemy_positions) - 1:
                 enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 200, 900, 900, True, "Level 1"))
             else:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900, False))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900, False))
         elif player.level == "Level 3":
             if idx == len(enemy_positions) - 1:
                 enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 300, 900, 900, True, "Level 3"))
             else:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900, False))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900, False))
         elif player.level == "Level 5_5":
             if idx == len(enemy_positions) - 1:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 5, 900, 900, True, "Level 5_5"))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 500, 900, 900, True, "Level 5_5"))
             else:
-                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900, False))
+                enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900, False))
         else:
-            enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900, False))
+            enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900, False))
 
         enemy_id_counter += 1
 
 
 gun = Gun(gun_img)
+
 
 
 def skin_num_increment():
@@ -866,6 +887,36 @@ def skin_num_decrement():
     else:
         skin_num -= 1
 
+def weapon_num_increment():
+    global weapon_skin_num
+    if weapon_skin_num == 4:
+        weapon_skin_num = 0
+    else:
+        weapon_skin_num += 1
+
+def weapon_num_decrement():
+    global weapon_skin_num
+    if weapon_skin_num == 0:
+        weapon_skin_num = 4
+    else:
+        weapon_skin_num -= 1
+
+def difficulty_increment():
+    global difficulty
+    if difficulty == "Easy":
+        difficulty = "Normal"
+    elif difficulty == "Normal":
+        difficulty = "Hard"
+    elif difficulty == "Hard":
+        difficulty = "Easy"
+def difficulty_decrement():
+    global difficulty
+    if difficulty == "Easy":
+        difficulty = "Hard"
+    elif difficulty == "Normal":
+        difficulty = "Easy"
+    elif difficulty == "Hard":
+        difficulty = "Normal"
 
 def clear_survey_answers():
     with open('answer.txt', 'w') as f:
@@ -992,10 +1043,12 @@ def draw_main_menu():
     exit_button.draw()
     if player_type == 'Achiever':
         badges_button.draw()
+        difficulty_button.draw()
     survey_button.draw()
     if player_type == 'Free Spirit':
         # print('Debug: Free Spirit')
         customize_button.draw()
+        weapon_customize_button.draw()
     display.blit(title_img, (250, 0))
 
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
@@ -1329,7 +1382,7 @@ def draw_customize_screen():
     back_button.draw()
     left_button.draw()
     right_button.draw()
-
+    skin_name = "Classic"
     # print("debug: skin num", skin_num)
     if skin_num == 0:
         skin_name = "Classic"
@@ -1352,6 +1405,68 @@ def draw_customize_screen():
 
     pygame.display.update()
 
+def draw_difficulty_screen():
+    display.fill((180, 235, 235))
+    back_button.draw()
+    left_button.draw()
+    right_button.draw()
+
+    diff_info = ""
+    if difficulty == "Normal":
+        difficulty_num = 0
+    if difficulty == "Easy":
+        difficulty_num = 15
+        diff_info = "Enemies are easy to slay"
+    if difficulty == "Hard":
+        difficulty_num = -15
+        diff_info = "Enemies are harder to slay"
+
+    display.blit(pixel_font.render(difficulty, True, (0, 0, 0)), (900, 200))
+    display.blit(pixel_font.render(diff_info, True, (0, 0, 0)), (900, 400))
+
+    screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
+
+    update_cursor(pygame.mouse.get_pos())
+
+    pygame.display.update()
+
+def draw_weapon_customize_screen():
+    global player_animations, weapon_skin_num, show_text
+    display.fill((180, 235, 235))
+    back_button.draw()
+    left_button.draw()
+    right_button.draw()
+    weapon_skin_name = "Classic"
+    weapon_info = "Basic"
+    # print("debug: skin num", skin_num)
+    if weapon_skin_num == 0:
+        weapon_skin_name = "Classic"
+    if weapon_skin_num == 1:
+        weapon_skin_name = "Assault-Rifle"
+        weapon_info = "Basic but different"
+    if weapon_skin_num == 2:
+        weapon_skin_name = "Desert Eagle"
+        weapon_info = "Bigger bullet"
+    if weapon_skin_num == 3:
+        weapon_skin_name = "Shotgun"
+        weapon_info = "Multiple shots"
+    if weapon_skin_num == 4:
+        weapon_skin_name = "SMG"
+        weapon_info = "faster and more damage"
+
+    display.blit(pixel_font.render(weapon_skin_name, True, (0, 0, 0)), (900, 200))
+    display.blit(pixel_font.render(weapon_info, True, (0,0,0)), (900, 400))
+    #if show_text:
+    #    current_time = pygame.time.get_ticks()
+    #    if current_time - text_start_time <= text_duration:
+    #        display.blit(pixel_font.render("Carrot Locked: Try jump in Level 3", True, (0, 0, 0)), (1000, 600))
+    #    else:
+    #        show_text = False
+    screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
+
+    update_cursor(pygame.mouse.get_pos())
+
+    pygame.display.update()
 
 questions = [
     ": It is important to me to follow my own path",  # f1 freespirit
@@ -1441,16 +1556,16 @@ def survey_mapping(response_mapping):
     full_loadings = np.zeros((6, 4))
 
     # Free Spirit
-    full_loadings[0, 3] = 0.79  # Q1
-    full_loadings[1, 3] = 0.67  # Q2
+    full_loadings[0, 3] = 1#0.79  # Q1
+    full_loadings[1, 3] = 1#0.67  # Q2
 
     # Player
-    full_loadings[2, 2] = 0.76  # Q3
-    full_loadings[3, 2] = 0.71  # Q4
+    full_loadings[2, 2] = 1#0.76  # Q3
+    full_loadings[3, 2] = 1#0.71  # Q4
 
     # Achiever
-    full_loadings[4, 1] = 0.68  # Q5
-    full_loadings[5, 1] = 0.75  # Q6
+    full_loadings[4, 1] = 1#0.68  # Q5
+    full_loadings[5, 1] = 1#0.75  # Q6
 
     factor_scores = np.dot(responses_array, full_loadings)
     # sorts for highest value
@@ -1485,9 +1600,11 @@ while True:
                                   (0, 0, 0), pixel_font_large)
         survey_button = Button(120, 800, 400, 100, (75, 160, 173), "Take Survey", (0, 0, 0), pixel_font_large)
         if player_type == 'Free Spirit':
-            customize_button = Button(150, 650, 300, 100, (75, 160, 173), "Customize", (0, 0, 0), pixel_font_large)
+            customize_button = Button(150, 650, 300, 100, (75, 160, 173), "Skin", (0, 0, 0), pixel_font_large)
+            weapon_customize_button = Button(150, 450, 300, 100, (75, 160, 173), "Weapon", (0, 0, 0), pixel_font_large)
         if player_type == 'Achiever':
             badges_button = Button(120, 300, 300, 100, (255, 50, 255), "Badges", (0, 0, 0), pixel_font_large)
+            difficulty_button = Button(150, 650, 300, 100, (75, 160, 173), "Difficulty", (0, 0, 0), pixel_font_large)
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -1524,15 +1641,26 @@ while True:
                             show_badges = True
                             main_menu = False
                             select_sound.play()
+                        if difficulty_button.is_over():
+                            difficulty_screen = True
+                            main_menu = False
+                            select_sound.play()
+
                     if survey_button.is_over():
                         survey_screen = True
                         main_menu = False
                         select_sound.play()
+
                     if player_type == 'Free Spirit':
                         if customize_button.is_over():
                             customize_menu = True
                             main_menu = False
                             select_sound.play()
+                        if weapon_customize_button.is_over():
+                            weapon_customize_menu = True
+                            main_menu = False
+                            select_sound.play()
+
                     if load_game_button.is_over():
                         load_game_menu = True
                         main_menu = False
@@ -1543,10 +1671,90 @@ while True:
         exit_button.update()
         if player_type == 'Achiever':
             badges_button.update()
+            difficulty_button.update()
         survey_button.update()
         if player_type == 'Free Spirit':
             customize_button.update()
+            weapon_customize_button.update()
         draw_main_menu()
+
+    if difficulty_screen:
+        left_button = Button(560, 200, 80, 80, (75, 189, 73), '<', (0, 0, 0), pixel_font_large)
+        right_button = Button(1560, 200, 80, 80, (75, 189, 73), '>', (0, 0, 0), pixel_font_large)
+        back_button = Button(500, 800, 200, 90, (255, 50, 50), "Back", (0, 0, 0), pixel_font_large)
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == KEYDOWN:
+                if event.key == pygame.K_f:
+                    screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
+                if event.key == pygame.K_ESCAPE:
+                    screen = pygame.display.set_mode(WINDOW_SIZE)
+
+            if event.type == MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if left_button.is_over():
+                        difficulty_decrement()
+                    if right_button.is_over():
+                        difficulty_increment()
+
+                    if back_button.is_over():
+                        difficulty_screen = False
+                        main_menu = True
+                        select_sound.play()
+                        # update player animation
+
+
+        left_button.update()
+        right_button.update()
+
+        back_button.update()
+        draw_difficulty_screen()
+
+    if weapon_customize_menu:
+        left_button = Button(560, 200, 80, 80, (75, 189, 73), '<', (0, 0, 0), pixel_font_large)
+        right_button = Button(1560, 200, 80, 80, (75, 189, 73), '>', (0, 0, 0), pixel_font_large)
+        back_button = Button(500, 800, 200, 90, (255, 50, 50), "Back", (0, 0, 0), pixel_font_large)
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == KEYDOWN:
+                if event.key == pygame.K_f:
+                    screen = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN)
+                if event.key == pygame.K_ESCAPE:
+                    screen = pygame.display.set_mode(WINDOW_SIZE)
+
+            if event.type == MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if left_button.is_over():
+                        weapon_num_decrement()
+                    if right_button.is_over():
+                        weapon_num_increment()
+
+                    if back_button.is_over():
+                        #TODO
+                        #if skin_num == 3 and carrot_locked:
+                        #    show_text = True
+                        #    text_start_time = pygame.time.get_ticks()
+                        #else:
+                            weapon_customize_menu = False
+                            main_menu = True
+                            select_sound.play()
+                            # update player animation
+                            new_gun = select_weapon_skin()
+                            gun = Gun(new_gun)
+
+        left_button.update()
+        right_button.update()
+
+        back_button.update()
+        draw_weapon_customize_screen()
 
     if customize_menu:
 
@@ -1665,7 +1873,7 @@ while True:
             game_counter += 1
             save_button_y += 110
 
-        back_button = Button(700, 730, 200, 90, (255, 50, 50), "Back", (0, 0, 0), pixel_font_large)
+        back_button = Button(1500, 730, 200, 90, (255, 50, 50), "Back", (0, 0, 0), pixel_font_large)
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -1820,19 +2028,44 @@ while True:
             if event.type == MOUSEBUTTONDOWN:
                 if event.button == 1 and len(bullets) <= 20:
                     mx, my = event.pos
-                    slopex = mx - (player.rect.centerx - scroll[0] + 5)
-                    slopey = my - (player.rect.centery - scroll[1] + 35)
-                    bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15,
-                                              math.atan2(slopey, slopex), projectile_img))
+                    if weapon_skin_num == 3:
+                        angle1 = math.atan2(my - (player.rect.centery - scroll[1] + 35),
+                                            mx - (player.rect.centerx - scroll[0] + 5)) + random.uniform(-0.25, 0.25)
+                        angle2 = math.atan2(my - (player.rect.centery - scroll[1] + 35),
+                                            mx - (player.rect.centerx - scroll[0] + 5)) + random.uniform(-0.25, 0.25)
+
+                        bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15,
+                                                  angle1, projectile_img))
+                        bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15,
+                                                  angle2, projectile_img))
+                    elif weapon_skin_num == 2:
+                        slopex = mx - (player.rect.centerx - scroll[0] + 5)
+                        slopey = my - (player.rect.centery - scroll[1] + 35)
+
+                        bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 20, 10, 15,
+                                                  math.atan2(slopey, slopex), projectile_img))
+                    elif weapon_skin_num == 4:
+                        slopex = mx - (player.rect.centerx - scroll[0] + 5)
+                        slopey = my - (player.rect.centery - scroll[1] + 35)
+
+                        bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 24, 20,
+                                                  math.atan2(slopey, slopex), projectile_img))
+                    else:
+                        slopex = mx - (player.rect.centerx - scroll[0] + 5)
+                        slopey = my - (player.rect.centery - scroll[1] + 35)
+
+                        bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15,
+                                            math.atan2(slopey, slopex), projectile_img))
                     shoot_sound.play()
-                    bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15,
-                                              math.atan2(slopey, slopex), projectile_img))
+                    #bullets.append(Projectile(player.rect.centerx + 5, player.rect.centery + 35, 10, 14, 15,
+                                             # math.atan2(slopey, slopex), projectile_img))
                     shots_fired += 1
                     if DMGCount <= 4:
                         DMGCount += 1
                     else:
                         DMGCount = 0
                         DMG = 15
+
 
 
 
@@ -1927,12 +2160,13 @@ while True:
             if enemies == []:
                 fade_out = True
                 pygame.mixer.music.fadeout(1000)
+                if player_type == 'Achiever':
+                    update_badge_status("Erledige den zweiten Boss")
                 if fade_alpha >= 300:
                     fade_in = True
                     play_bgmusic()
                     player.change_level('Level 4')
-            elif player_type == 'Achiever':
-                update_badge_status("Erledige den zweiten Boss")
+
             elif player_type == 'Free Spirit':
                 check_level_change_to('Level 3', 'Level 3_5')
 
@@ -1963,7 +2197,7 @@ while True:
                 win_screen = True
                 play_win_music()
         elif player.level == 'Level 5_5':
-            start_time = time.time()
+            #start_time = time.time()
             if enemies == []:
                 end_level_time = time.time() - start_time
                 update_badge_status("Erledige den dritten Boss")
@@ -1973,9 +2207,9 @@ while True:
                 win_screen = True
                 play_win_music()
                 if end_level_time < 180:
-                    update_badge_status("Schließe das Spiel unter 3 min ab")
-                elif end_level_time < 120:
-                    update_badge_status("Schließe das Spiel unter 2 min ab")
+                    if end_level_time < 120:
+                        update_badge_status("Schließe das Spiel unter 2 min ab")
+                update_badge_status("Schließe das Spiel unter 3 min ab")
                 if player.deaths == 0:
                     update_badge_status("Schließe das Spiel ab ohne zu sterben")
                 if shots_fired < 100:
