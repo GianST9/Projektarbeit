@@ -1,11 +1,11 @@
 
-Schließe das Spiel ab
-Schließe das Spiel ab ohne zu sterben
-Schließe das Spiel mit weniger als 100 Schüssen ab
+Schließe das Spiel ab (Hard Mode)
+Schließe das Spiel ab ohne zu sterben (Normal Mode)
+Schließe das Spiel mit weniger als 120 Schüssen ab (Normal Mode)
 
-Erledige den ersten Boss
-Erledige den zweiten Boss
-Erledige den dritten Boss
+Erledige den ersten Boss (Normal Mode)
+Erledige den zweiten Boss (Normal Mode)
+Erledige den dritten Boss (Normal Mode)
 
-Schließe das Spiel unter 3 min ab
-Schließe das Spiel unter 2 min ab
+Schließe das Spiel unter 3 min ab (Normal Mode)
+Schließe das Spiel unter 2 min ab (Normal Mode)
