@@ -1429,6 +1429,7 @@ def draw_difficulty_screen():
 
     pygame.display.update()
 
+
 def draw_weapon_customize_screen():
     global player_animations, weapon_skin_num, show_text
     display.fill((180, 235, 235))
