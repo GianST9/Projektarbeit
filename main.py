@@ -404,7 +404,7 @@ class Player():
         enemy_bullets.clear()
         enemy_id_counter = 0
         for enemy_pos in levels[self.level].enemy_pos:
-            enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 100, 900, 900))
+            enemies.append(Enemy(enemy_id_counter, enemy_pos, 75, 125, 1, 900, 900))
             enemy_id_counter += 1
         # initialize_enemies() wird aufgerufen
         if player_type == 'Achiever':
@@ -869,7 +869,6 @@ def initialize_enemies():
 
 
 gun = Gun(gun_img)
-
 
 
 def skin_num_increment():
@@ -2206,10 +2205,11 @@ while True:
                 game_running = False
                 win_screen = True
                 play_win_music()
-                if end_level_time < 180:
-                    if end_level_time < 120:
-                        update_badge_status("Schließe das Spiel unter 2 min ab")
-                update_badge_status("Schließe das Spiel unter 3 min ab")
+                if end_level_time < 120:
+                    update_badge_status("Schließe das Spiel unter 2 min ab")
+                elif end_level_time < 60:
+                    update_badge_status("Schließe das Spiel unter 1 min ab")
+                    update_badge_status("Schließe das Spiel unter 2 min ab")
                 if player.deaths == 0:
                     update_badge_status("Schließe das Spiel ab ohne zu sterben")
                 if shots_fired < 100:
